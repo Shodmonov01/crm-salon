@@ -1,0 +1,11 @@
+.root {
+  background: var(--mantine-color-gray-0);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--app-shell-header-height));
+  overflow: hidden;
+  background: var(--mantine-color-gray-0);
+}

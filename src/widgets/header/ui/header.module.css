@@ -1,0 +1,63 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 20px;
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  gap: 16px;
+}
+
+.left {
+  flex-shrink: 0;
+}
+
+.logo {
+  align-items: center;
+}
+
+.logoIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--mantine-color-blue-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logoText {
+  color: var(--mantine-color-gray-9);
+}
+
+.center {
+  flex: 1;
+  max-width: 480px;
+}
+
+.search {
+  width: 100%;
+}
+
+.right {
+  flex-shrink: 0;
+}
+
+.branchButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+  font-size: var(--mantine-font-size-sm);
+  transition: background 0.15s;
+  background: transparent;
+}
+
+.branchButton:hover {
+  background: var(--mantine-color-gray-0);
+}
