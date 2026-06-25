@@ -13,6 +13,7 @@ interface BoardDateNavProps {
   onGoToday: () => void;
   onDateChange: (date: Date) => void;
   align?: 'start' | 'end';
+  className?: string;
 }
 
 export const BoardDateNav: React.FC<BoardDateNavProps> = ({
@@ -23,7 +24,8 @@ export const BoardDateNav: React.FC<BoardDateNavProps> = ({
   onNavigate,
   onGoToday,
   onDateChange,
-  align = 'start'
+  align = 'start',
+  className
 }) => {
   const [pickerOpen, setPickerOpen] = React.useState(false);
 
@@ -38,7 +40,7 @@ export const BoardDateNav: React.FC<BoardDateNavProps> = ({
   );
 
   return (
-    <div className={styles.dateNav}>
+    <div className={[styles.dateNav, className].filter(Boolean).join(' ')}>
       <div className={styles.dateNavControls}>
         <ActionIcon variant='subtle' color='gray' size='lg' onClick={() => onNavigate(-1)}>
           <CaretLeft size={18} />

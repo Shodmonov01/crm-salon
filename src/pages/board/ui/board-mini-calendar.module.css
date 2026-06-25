@@ -1,0 +1,90 @@
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendarTitle {
+  flex: 1;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  padding: 2px 0;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayEmpty {
+  aspect-ratio: 1;
+}
+
+.day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.day:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.day_today:not(.day_selected) {
+  color: var(--mantine-color-blue-7);
+  font-weight: 700;
+}
+
+.day_selected {
+  background: var(--mantine-color-blue-6);
+  color: var(--mantine-color-white);
+  font-weight: 700;
+}
+
+.day_selected:hover {
+  background: var(--mantine-color-blue-7);
+}
+
+.day_marked::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--mantine-color-blue-4);
+}
+
+.day_selected.day_marked::after {
+  background: var(--mantine-color-white);
+}

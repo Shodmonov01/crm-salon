@@ -28,6 +28,7 @@ import {
   getEmployeeInitials,
   getEmployeeLightColor,
   isSameDay,
+  parseApiDateFromDateTime,
   toDateInput
 } from '@/shared/lib/format';
 import type { BoardAppointment } from '../lib/appointmentBoard';
@@ -52,7 +53,8 @@ import {
 } from '../lib/appointmentForm';
 import { useCreateAppointmentDrag } from '../hooks/useCreateAppointmentDrag';
 import { AppointmentFormModal } from './AppointmentFormModal';
-import { BoardToolbarAside } from './BoardToolbarAside';
+import { BoardDateNav } from './BoardDateNav';
+import { BoardSidebar } from './BoardSidebar';
 import { EmployeeFilterPopover } from './EmployeeFilterPopover';
 import { CreatePreview } from './CreatePreview';
 import styles from './board-page.module.css';
@@ -194,6 +196,19 @@ export const BoardPage: React.FC = () => {
   const boardAppointments = React.useMemo(
     () => mapAppointmentsToBoard(appointments ?? [], date, filterSet),
     [appointments, date, filterSet]
+  );
+
+  const appointmentDates = React.useMemo(() => {
+    const dates = new Set<string>();
+    for (const appt of appointments ?? []) {
+      dates.add(parseApiDateFromDateTime(appt.start_time_est));
+    }
+    return dates;
+  }, [appointments]);
+
+  const dayRevenue = React.useMemo(
+    () => boardAppointments.reduce((sum, appt) => sum + (appt.paid ? appt.totalPrice : 0), 0),
+    [boardAppointments]
   );
 
   const navigate = React.useCallback(
@@ -417,7 +432,7 @@ export const BoardPage: React.FC = () => {
           </Button>
         </div>
 
-        <BoardToolbarAside
+        <BoardDateNav
           view={view}
           date={date}
           label={dateNavLabel}
@@ -425,19 +440,23 @@ export const BoardPage: React.FC = () => {
           onNavigate={navigate}
           onGoToday={goToday}
           onDateChange={handleDatePick}
+          className={styles.toolbarDateMobile}
         />
       </div>
 
-      {employees.length === 0 && employeeFilter.size > 0 ? (
-        <Alert color='gray' title='Фильтр сотрудников' m='md'>
-          Выберите сотрудников в панели выше или сбросьте фильтр
-        </Alert>
-      ) : activeEmployees.length === 0 ? (
-        <Alert color='gray' title='Нет активных сотрудников' m='md'>
-          Добавьте сотрудников, чтобы отобразить рабочий стол
-        </Alert>
-      ) : (
-        <div className={styles.gridScroll}>
+      <div className={styles.body}>
+        <div className={styles.main}>
+          {employees.length === 0 && employeeFilter.size > 0 ? (
+            <Alert color='gray' title='Фильтр сотрудников' m='md'>
+              Выберите сотрудников в панели выше или сбросьте фильтр
+            </Alert>
+          ) : activeEmployees.length === 0 ? (
+            <Alert color='gray' title='Нет активных сотрудников' m='md'>
+              Добавьте сотрудников, чтобы отобразить рабочий стол
+            </Alert>
+          ) : (
+            <>
+            <div className={styles.gridScroll}>
           {view === 'day' ? (
             <div
               className={styles.grid}
@@ -555,12 +574,25 @@ export const BoardPage: React.FC = () => {
               })}
             </div>
           )}
-        </div>
-      )}
+            </div>
 
-      <Text size='xs' c='dimmed' px='md' py={6} className={styles.hint}>
-        Потяните по слоту — новая запись · Клик по записи — редактирование
-      </Text>
+            <Text size='xs' c='dimmed' px='md' py={6} className={styles.hint}>
+              Потяните по слоту — новая запись · Клик по записи — редактирование
+            </Text>
+            </>
+          )}
+        </div>
+
+        <BoardSidebar
+          date={date}
+          isAtToday={isAtToday}
+          markedDates={appointmentDates}
+          dayRevenue={dayRevenue}
+          appointmentsCount={boardAppointments.length}
+          onDateChange={handleDatePick}
+          onGoToday={goToday}
+        />
+      </div>
 
       <AppointmentFormModal
         opened={formOpen}
