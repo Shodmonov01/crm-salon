@@ -3,7 +3,6 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Group,
   Modal,
   Select,
@@ -20,7 +19,7 @@ import {
   useNotifications,
 } from '@/shared/api/hooks/useNotifications';
 import type { SalonNotificationType } from '@/shared/api/types';
-import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { ConfirmModal, DataTable, DataTableRow, ListPage } from '@/shared/ui';
 import { useNotificationsWs } from '@/shared/lib/notifications/NotificationsWsProvider';
 import { formatDateTime, NOTIFICATION_TYPE_LABELS } from '@/shared/lib/format';
 import styles from './notifications-page.module.css';
@@ -59,95 +58,104 @@ export const NotificationsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Уведомления">
         <Skeleton height={48} mb="md" />
         <Skeleton height={400} radius="md" />
-      </div>
+      </ListPage>
     );
   }
 
   if (isError) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Уведомления">
         <Alert color="red" title="Не удалось загрузить уведомления">
           Проверьте доступность API
         </Alert>
-      </div>
+      </ListPage>
     );
   }
 
-  return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <div>
-          <Group gap="sm">
-            <Text size="xl" fw={700}>
-              Уведомления
-            </Text>
-            <Badge
-              variant="light"
-              color={connected ? 'green' : 'gray'}
-              leftSection={
-                <span
-                  className={`${styles.statusDot} ${connected ? styles.statusDot_online : styles.statusDot_offline}`}
-                />
-              }
-            >
-              {connected ? 'Поток подключён' : 'Поток отключён'}
-            </Badge>
-          </Group>
-          <Text size="sm" c="dimmed" mt={2}>
-            {notifications?.length ?? 0} уведомлений
-          </Text>
-        </div>
-        <Button leftSection={<Plus size={16} />} onClick={() => setFormOpen(true)}>
-          Создать
-        </Button>
-      </div>
+  const items = notifications ?? [];
 
-      <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
-        <Table highlightOnHover verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Тип</Table.Th>
-              <Table.Th>Заголовок</Table.Th>
-              <Table.Th>Текст</Table.Th>
-              <Table.Th>Запланировано</Table.Th>
-              <Table.Th w={48} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {(notifications ?? []).map((item) => (
-              <Table.Tr key={item.id} className={styles.tableRow}>
-                <Table.Td>
-                  <Badge size="sm" variant="light">
-                    {NOTIFICATION_TYPE_LABELS[item.type] ?? item.type}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>{item.title ?? '—'}</Table.Td>
-                <Table.Td>
-                  <Text size="sm" lineClamp={2}>
-                    {item.body}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="xs">{formatDateTime(item.scheduled_at)}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Button
-                    variant="subtle"
-                    color="red"
-                    size="xs"
-                    onClick={() => setDeleteTarget(item.id)}
-                  >
-                    <Trash size={14} />
-                  </Button>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Card>
+  return (
+    <ListPage
+      title="Уведомления"
+      subtitle={`${items.length} уведомлений`}
+      actions={
+        <Group gap="sm">
+          <Badge
+            variant="light"
+            color={connected ? 'green' : 'gray'}
+            leftSection={
+              <span
+                className={`${styles.statusDot} ${connected ? styles.statusDot_online : styles.statusDot_offline}`}
+              />
+            }
+          >
+            {connected ? 'Поток подключён' : 'Поток отключён'}
+          </Badge>
+          <Button leftSection={<Plus size={16} />} onClick={() => setFormOpen(true)}>
+            Создать
+          </Button>
+        </Group>
+      }
+    >
+      <DataTable
+        columns={[
+          { key: 'type', label: 'Тип' },
+          { key: 'title', label: 'Заголовок' },
+          { key: 'body', label: 'Текст' },
+          { key: 'scheduled', label: 'Запланировано' },
+          { key: 'delivered', label: 'Доставлено' },
+          { key: 'actions', label: '', width: 48 },
+        ]}
+        isEmpty={items.length === 0}
+        emptyMessage="Уведомлений нет"
+      >
+        {items.map((item) => (
+          <DataTableRow key={item.id}>
+            <Table.Td>
+              <Badge size="sm" variant="light">
+                {NOTIFICATION_TYPE_LABELS[item.type] ?? item.type}
+              </Badge>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" fw={500}>
+                {item.title ?? '—'}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" lineClamp={2}>
+                {item.body}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="xs">{formatDateTime(item.scheduled_at)}</Text>
+            </Table.Td>
+            <Table.Td>
+              {item.delivered_at ? (
+                <Badge size="xs" variant="light" color="green">
+                  {formatDateTime(item.delivered_at)}
+                </Badge>
+              ) : (
+                <Badge size="xs" variant="light" color="orange">
+                  Ожидает
+                </Badge>
+              )}
+            </Table.Td>
+            <Table.Td>
+              <Button
+                variant="subtle"
+                color="red"
+                size="xs"
+                onClick={() => setDeleteTarget(item.id)}
+              >
+                <Trash size={14} />
+              </Button>
+            </Table.Td>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       <Modal opened={formOpen} onClose={() => setFormOpen(false)} title="Новое уведомление" radius="md">
         <Select
@@ -197,6 +205,6 @@ export const NotificationsPage: React.FC = () => {
         }
         onClose={() => setDeleteTarget(null)}
       />
-    </div>
+    </ListPage>
   );
 };

@@ -3,7 +3,6 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Card,
   Checkbox,
   Group,
   Menu,
@@ -30,9 +29,10 @@ import type {
   MaterialUpdatePayload,
   MeasurementUnit,
 } from '@/shared/api/types';
+import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { DataTable, DataTableRow, ListPage, listPageStyles } from '@/shared/ui';
 import { formatPrice, MEASUREMENT_UNIT_LABELS } from '@/shared/lib/format';
-import styles from './materials-page.module.css';
 
 const MEASUREMENT_OPTIONS = Object.entries(MEASUREMENT_UNIT_LABELS).map(([value, label]) => ({
   value,
@@ -179,103 +179,103 @@ export const MaterialsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Склад">
         <Skeleton height={48} mb="md" />
         <Skeleton height={400} radius="md" />
-      </div>
+      </ListPage>
     );
   }
 
   if (isError) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Склад">
         <Alert color="red" title="Не удалось загрузить материалы">
           Проверьте доступность API
         </Alert>
-      </div>
+      </ListPage>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <div>
-          <Text size="xl" fw={700}>
-            Склад
-          </Text>
-          <Text size="sm" c="dimmed" mt={2}>
-            {materials?.length ?? 0} материалов
-          </Text>
-        </div>
+    <ListPage
+      title="Склад"
+      subtitle={`${materials?.length ?? 0} материалов`}
+      actions={
         <Button leftSection={<Plus size={16} />} onClick={openCreate}>
           Добавить материал
         </Button>
-      </div>
-
-      <Group className={styles.filters}>
+      }
+      filters={
         <TextInput
-          className={styles.searchInput}
+          className={listPageStyles.searchInput}
           placeholder="Поиск по названию или артикулу..."
           leftSection={<MagnifyingGlass size={15} />}
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
-      </Group>
-
-      <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
-        <Table highlightOnHover verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Артикул</Table.Th>
-              <Table.Th>Название</Table.Th>
-              <Table.Th>Кол-во</Table.Th>
-              <Table.Th>Цена продажи</Table.Th>
-              <Table.Th w={48} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {filtered.map((material) => (
-              <Table.Tr key={material.id} className={styles.tableRow}>
-                <Table.Td>{material.article}</Table.Td>
-                <Table.Td>
-                  <Text size="sm" fw={500}>
-                    {material.name}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  {material.quantity} {MEASUREMENT_UNIT_LABELS[material.measurement_unit]}
-                </Table.Td>
-                <Table.Td>{formatPrice(material.sell_price)}</Table.Td>
-                <Table.Td>
-                  <Menu shadow="sm" width={180} radius="md">
-                    <Menu.Target>
-                      <ActionIcon variant="subtle" color="gray" size="sm">
-                        <DotsThree size={16} weight="bold" />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<PencilSimple size={14} />}
-                        onClick={() => openEdit(material)}
-                      >
-                        Редактировать
-                      </Menu.Item>
-                      <Menu.Item onClick={() => openQuantity(material)}>Изменить количество</Menu.Item>
-                      <Menu.Item
-                        leftSection={<Trash size={14} />}
-                        color="red"
-                        onClick={() => setDeleteTarget(material)}
-                      >
-                        Удалить
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                </Table.Td>
-                </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Card>
+      }
+    >
+      <DataTable
+        columns={[
+          { key: 'article', label: 'Артикул' },
+          { key: 'name', label: 'Название' },
+          { key: 'quantity', label: 'Кол-во' },
+          { key: 'price', label: 'Цена продажи' },
+          { key: 'actions', label: '', width: 48 },
+        ]}
+        isEmpty={filtered.length === 0}
+        emptyMessage="Материалы не найдены"
+      >
+        {filtered.map((material) => (
+          <DataTableRow key={material.id}>
+            <Table.Td>
+              <Text size="sm" ff="monospace" c="dimmed">
+                {material.article}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" fw={500}>
+                {material.name}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm">
+                {material.quantity} {MEASUREMENT_UNIT_LABELS[material.measurement_unit]}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" fw={600}>
+                {formatPrice(material.sell_price)}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Menu shadow="sm" width={180} radius="md">
+                <Menu.Target>
+                  <ActionIcon variant="subtle" color="gray" size="sm">
+                    <DotsThree size={16} weight="bold" />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<PencilSimple size={14} />}
+                    onClick={() => openEdit(material)}
+                  >
+                    Редактировать
+                  </Menu.Item>
+                  <Menu.Item onClick={() => openQuantity(material)}>Изменить количество</Menu.Item>
+                  <Menu.Item
+                    leftSection={<Trash size={14} />}
+                    color="red"
+                    onClick={() => setDeleteTarget(material)}
+                  >
+                    Удалить
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Table.Td>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       <Modal
         opened={formOpen}
@@ -360,7 +360,15 @@ export const MaterialsPage: React.FC = () => {
           checked={form.can_be_product}
           onChange={(event) => setForm({ ...form, can_be_product: event.currentTarget.checked })}
         />
-        <Group justify="flex-end">
+        {editing && (
+          <>
+            <Text size="sm" fw={600} mb="xs">
+              История изменений
+            </Text>
+            <AuditLogsPanel tableName="materials" recordId={editing.id} />
+          </>
+        )}
+        <Group justify="flex-end" mt={editing ? 'md' : undefined}>
           <Button variant="subtle" color="gray" onClick={() => setFormOpen(false)}>
             Отмена
           </Button>
@@ -418,6 +426,6 @@ export const MaterialsPage: React.FC = () => {
         }
         onClose={() => setDeleteTarget(null)}
       />
-    </div>
+    </ListPage>
   );
 };

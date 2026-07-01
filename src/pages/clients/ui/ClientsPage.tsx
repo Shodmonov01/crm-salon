@@ -4,8 +4,6 @@ import {
   Text,
   TextInput,
   Button,
-  Card,
-  Table,
   ActionIcon,
   Menu,
   Modal,
@@ -15,7 +13,8 @@ import {
   Alert,
   NumberInput,
   Tabs,
-  Badge
+  Badge,
+  Table,
 } from '@mantine/core';
 import {
   MagnifyingGlass,
@@ -35,6 +34,7 @@ import {
 } from '@/shared/api/hooks/useClients';
 import type { Client, ClientCreatePayload, ClientUpdatePayload, Sex } from '@/shared/api/types';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { DataTable, DataTableRow, ListPage, listPageStyles } from '@/shared/ui';
 import { PersonAvatar } from '@/shared/ui/PersonAvatar';
 import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
 import {
@@ -46,7 +46,6 @@ import {
   SEX_LABELS,
   SEX_OPTIONS
 } from '@/shared/lib/format';
-import styles from './clients-page.module.css';
 
 interface ClientFormState {
   firstname: string;
@@ -179,144 +178,117 @@ export const ClientsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Клиенты">
         <Skeleton height={48} />
-        <Skeleton height={400} radius='lg' />
-      </div>
+        <Skeleton height={400} radius="lg" />
+      </ListPage>
     );
   }
 
   if (isError) {
     return (
-      <div className={styles.page}>
-        <Alert color='red' title='Не удалось загрузить клиентов'>
+      <ListPage title="Клиенты">
+        <Alert color="red" title="Не удалось загрузить клиентов">
           Проверьте доступность API и авторизацию
         </Alert>
-      </div>
+      </ListPage>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <div>
-          <Text size='xl' fw={700}>
-            Клиенты
-          </Text>
-          <Text size='sm' c='dimmed' mt={2}>
-            {filtered.length} клиентов
-          </Text>
-        </div>
+    <ListPage
+      title="Клиенты"
+      subtitle={`${filtered.length} клиентов`}
+      actions={
         <Button leftSection={<Plus size={16} />} onClick={openCreate}>
           Добавить клиента
         </Button>
-      </div>
-
-      <Group gap='sm' className={styles.filters}>
+      }
+      filters={
         <TextInput
-          placeholder='Поиск по имени, телефону...'
+          placeholder="Поиск по имени, телефону..."
           leftSection={<MagnifyingGlass size={15} />}
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
-          className={styles.searchInput}
-          size='sm'
+          className={listPageStyles.searchInput}
+          size="sm"
         />
-      </Group>
-
-      <Card padding={0} radius='lg' shadow='xs' className={styles.tableCard}>
-        <Table highlightOnHover verticalSpacing='sm' horizontalSpacing='lg'>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Клиент</Table.Th>
-              <Table.Th>Телефон</Table.Th>
-              <Table.Th>Пол</Table.Th>
-              <Table.Th>Депозит</Table.Th>
-              <Table.Th>Дата рождения</Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {filtered.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={6}>
-                  <Text c='dimmed' ta='center' py='md'>
-                    Клиенты не найдены
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              filtered.map((client) => (
-                <Table.Tr key={client.id} className={styles.tableRow}>
-                  <Table.Td>
-                    <Group gap={10}>
-                      <PersonAvatar
-                        seed={client.id}
-                        initials={getClientInitials(client)}
-                        size='xs'
-                      />
-                      <Text size='sm' fw={600}>
-                        {getClientFullName(client)}
-                      </Text>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size='sm' c='dimmed'>
-                      {client.phone ?? '—'}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size='sm'>{SEX_LABELS[client.sex]}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size='sm' fw={600}>
-                      {formatPrice(client.deposit)}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size='sm' c='dimmed'>
-                      {formatDate(client.birth_date)}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Menu shadow='sm' width={180} radius='md'>
-                      <Menu.Target>
-                        <ActionIcon variant='subtle' color='gray' size='sm'>
-                          <DotsThree size={16} weight='bold' />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item
-                          leftSection={<CalendarBlank size={14} />}
-                          onClick={() => {
-                            setDetailTarget(client);
-                            setDetailTab('appointments');
-                          }}
-                        >
-                          Записи и история
-                        </Menu.Item>
-                        <Menu.Item
-                          leftSection={<PencilSimple size={14} />}
-                          onClick={() => openEdit(client)}
-                        >
-                          Редактировать
-                        </Menu.Item>
-                        <Menu.Item onClick={() => openDeposit(client)}>Депозит</Menu.Item>
-                        <Menu.Item
-                          leftSection={<Trash size={14} />}
-                          color='red'
-                          onClick={() => setDeleteTarget(client)}
-                        >
-                          Удалить
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  </Table.Td>
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Card>
+      }
+    >
+      <DataTable
+        columns={[
+          { key: 'client', label: 'Клиент' },
+          { key: 'phone', label: 'Телефон' },
+          { key: 'sex', label: 'Пол' },
+          { key: 'deposit', label: 'Депозит' },
+          { key: 'birth', label: 'Дата рождения' },
+          { key: 'actions', label: '', width: 48 },
+        ]}
+        isEmpty={filtered.length === 0}
+        emptyMessage="Клиенты не найдены"
+      >
+        {filtered.map((client) => (
+          <DataTableRow key={client.id}>
+            <Table.Td>
+              <Group gap={10}>
+                <PersonAvatar seed={client.id} initials={getClientInitials(client)} size="xs" />
+                <Text size="sm" fw={600}>
+                  {getClientFullName(client)}
+                </Text>
+              </Group>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" c="dimmed">
+                {client.phone ?? '—'}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm">{SEX_LABELS[client.sex]}</Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" fw={600}>
+                {formatPrice(client.deposit)}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" c="dimmed">
+                {formatDate(client.birth_date)}
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Menu shadow="sm" width={180} radius="md">
+                <Menu.Target>
+                  <ActionIcon variant="subtle" color="gray" size="sm">
+                    <DotsThree size={16} weight="bold" />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<CalendarBlank size={14} />}
+                    onClick={() => {
+                      setDetailTarget(client);
+                      setDetailTab('appointments');
+                    }}
+                  >
+                    Записи и история
+                  </Menu.Item>
+                  <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => openEdit(client)}>
+                    Редактировать
+                  </Menu.Item>
+                  <Menu.Item onClick={() => openDeposit(client)}>Депозит</Menu.Item>
+                  <Menu.Item
+                    leftSection={<Trash size={14} />}
+                    color="red"
+                    onClick={() => setDeleteTarget(client)}
+                  >
+                    Удалить
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Table.Td>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       <Modal
         opened={formOpen}
@@ -452,39 +424,37 @@ export const ClientsPage: React.FC = () => {
           <Tabs.Panel value='appointments'>
             {appointmentsLoading ? (
               <Skeleton height={120} />
-            ) : (clientAppointments ?? []).length === 0 ? (
-              <Text size='sm' c='dimmed'>
-                Записей нет
-              </Text>
             ) : (
-              <Table verticalSpacing='xs' withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Дата</Table.Th>
-                    <Table.Th>Сумма</Table.Th>
-                    <Table.Th>Статус</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {(clientAppointments ?? []).map((appointment) => (
-                    <Table.Tr key={appointment.id}>
-                      <Table.Td>
-                        <Text size='xs'>{formatAppointmentDateTime(appointment.start_time_est)}</Text>
-                      </Table.Td>
-                      <Table.Td>{formatPrice(appointment.total_price)}</Table.Td>
-                      <Table.Td>
-                        <Badge
-                          size='xs'
-                          color={appointment.paid ? 'green' : 'orange'}
-                          variant='light'
-                        >
-                          {appointment.paid ? 'Оплачено' : 'Не оплачено'}
-                        </Badge>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+              <DataTable
+                compact
+                stickyHeader={false}
+                maxHeight={320}
+                columns={[
+                  { key: 'date', label: 'Дата' },
+                  { key: 'amount', label: 'Сумма' },
+                  { key: 'status', label: 'Статус' },
+                ]}
+                isEmpty={(clientAppointments ?? []).length === 0}
+                emptyMessage="Записей нет"
+              >
+                {(clientAppointments ?? []).map((appointment) => (
+                  <DataTableRow key={appointment.id}>
+                    <Table.Td>
+                      <Text size="xs">{formatAppointmentDateTime(appointment.start_time_est)}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {formatPrice(appointment.total_price)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge size="xs" color={appointment.paid ? 'green' : 'orange'} variant="light">
+                        {appointment.paid ? 'Оплачено' : 'Не оплачено'}
+                      </Badge>
+                    </Table.Td>
+                  </DataTableRow>
+                ))}
+              </DataTable>
             )}
           </Tabs.Panel>
           <Tabs.Panel value='audit'>
@@ -492,6 +462,6 @@ export const ClientsPage: React.FC = () => {
           </Tabs.Panel>
         </Tabs>
       </Modal>
-    </div>
+    </ListPage>
   );
 };

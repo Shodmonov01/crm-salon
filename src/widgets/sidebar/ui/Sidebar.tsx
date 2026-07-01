@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stack, Text, Tooltip } from '@mantine/core';
+import { Stack, Tooltip } from '@mantine/core';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Scissors, UserList, SquaresFour, Users, Package, CurrencyCircleDollar, Bell } from '@phosphor-icons/react';
 import styles from './sidebar.module.css';
@@ -63,11 +63,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
       <Stack gap={2} className={styles.navGroup}>
-        {!collapsed && (
-          <Text size="xs" fw={600} className={styles.groupLabel} tt="uppercase">
-            CRM
-          </Text>
-        )}
         {NAV_ITEMS.map(renderItem)}
       </Stack>
     </aside>

@@ -317,7 +317,29 @@ export const AppointmentFormModal: React.FC<AppointmentFormModalProps> = ({
           </div>
           <div className={styles.section}>
             <Text className={styles.sectionTitle}>История изменений</Text>
+            <Text size="xs" c="dimmed" mb="xs">
+              Запись
+            </Text>
             <AuditLogsPanel tableName="appointments" recordId={appointment.id} />
+            {(appointment.records ?? []).map((record) => (
+              <React.Fragment key={record.id}>
+                <Text size="xs" c="dimmed" mt="md" mb="xs">
+                  Сотрудник:{' '}
+                  {record.employee
+                    ? `${record.employee.firstname} ${record.employee.lastname ?? ''}`.trim()
+                    : `#${record.id}`}
+                </Text>
+                <AuditLogsPanel tableName="appointment_records" recordId={record.id} />
+                {record.services.map((service) => (
+                  <React.Fragment key={service.id}>
+                    <Text size="xs" c="dimmed" mt="sm" mb="xs">
+                      Услуга: {service.service?.name ?? `#${service.id}`}
+                    </Text>
+                    <AuditLogsPanel tableName="appointment_services" recordId={service.id} />
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
+            ))}
           </div>
         </>
       )}

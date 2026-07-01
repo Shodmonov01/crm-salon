@@ -18,10 +18,12 @@ import { Bell, Key, List, Scissors, SignOut, User } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/shared/api/hooks/useNotifications';
 import { useLogout, useChangePassword } from '@/shared/api/hooks/useAuth';
+import { authStorage } from '@/shared/api/client';
 import { useNotificationsWs } from '@/shared/lib/notifications/NotificationsWsProvider';
 import { formatDateTime } from '@/shared/lib/format';
 import { AUTH_ENABLED } from '@/shared/config/env';
 import styles from './header.module.css';
+import { PersonAvatar } from '@/shared/ui';
 
 interface HeaderProps {
   collapsed: boolean;
@@ -62,6 +64,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
   };
 
   const isPasswordValid = oldPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 6;
+  const tenantName = authStorage.getTenantName() ?? 'Salon CRM';
 
   return (
     <header className={styles.header}>
@@ -81,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
             <Scissors size={18} weight="bold" color="white" />
           </div>
           <Text fw={700} size="sm" className={styles.logoText}>
-            Salon CRM
+            {tenantName}
           </Text>
         </Group>
       </Group>
@@ -142,9 +145,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
           <Menu shadow="md" width={200} position="bottom-end" radius="md">
             <Menu.Target>
               <ActionIcon variant="subtle" color="gray" size="lg" aria-label="Профиль">
-                <Avatar size="sm" radius="md" color="blue">
-                  CRM
-                </Avatar>
+                <PersonAvatar seed={1} initials="A" size="md" />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>

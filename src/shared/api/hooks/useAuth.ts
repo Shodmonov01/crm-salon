@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiPatch, apiPost, authStorage } from '@/shared/api/client';
-import type { LoginPayload } from '@/shared/api/types';
+import type { LoginPayload, StaffLoginResponse } from '@/shared/api/types';
 import { addNotification } from '@/shared/lib/notifications';
 
 export interface ChangePasswordPayload {
@@ -15,9 +15,12 @@ export interface PasswordResetResponse {
 export const useLogin = () =>
   useMutation({
     mutationFn: (payload: LoginPayload) =>
-      apiPost<void, LoginPayload>('/api/v1/auth/login', payload),
-    onSuccess: () => {
+      apiPost<StaffLoginResponse, LoginPayload>('/api/v1/auth/login', payload),
+    onSuccess: (staff) => {
       authStorage.setAuthenticated(true);
+      if (staff.tenant_name) {
+        authStorage.setTenantName(staff.tenant_name);
+      }
       addNotification.success({ message: 'Вход выполнен' });
     },
   });

@@ -25,7 +25,7 @@ import type {
   TransactionMethod,
   TransactionType,
 } from '@/shared/api/types';
-import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { ConfirmModal, DataTable, DataTableRow } from '@/shared/ui';
 import {
   formatDateTime,
   formatPrice,
@@ -231,124 +231,116 @@ export const TransactionsTab: React.FC<TransactionsTabProps> = ({ enabled }) => 
         </Button>
       </Group>
 
-      <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
-        <Table highlightOnHover verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>ID</Table.Th>
-              <Table.Th>Тип</Table.Th>
-              <Table.Th>Категория</Table.Th>
-              <Table.Th>Сумма</Table.Th>
-              <Table.Th>Способ</Table.Th>
-              <Table.Th>Связь</Table.Th>
-              <Table.Th>Статус</Table.Th>
-              <Table.Th>Дата</Table.Th>
-              <Table.Th w={100} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {filteredTransactions.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={9}>
-                  <Text c="dimmed" ta="center" py="lg">
-                    Транзакций нет
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              filteredTransactions.map((transaction) => {
-                const cancelled = Boolean(transaction.cancelled);
-                const canCancel = !transaction.auto_generated && !cancelled;
+      <DataTable
+        columns={[
+          { key: 'id', label: 'ID' },
+          { key: 'type', label: 'Тип' },
+          { key: 'category', label: 'Категория' },
+          { key: 'amount', label: 'Сумма' },
+          { key: 'method', label: 'Способ' },
+          { key: 'link', label: 'Связь' },
+          { key: 'status', label: 'Статус' },
+          { key: 'date', label: 'Дата' },
+          { key: 'actions', label: '', width: 100 },
+        ]}
+        isEmpty={filteredTransactions.length === 0}
+        emptyMessage="Транзакций нет"
+      >
+        {filteredTransactions.map((transaction) => {
+          const cancelled = Boolean(transaction.cancelled);
+          const canCancel = !transaction.auto_generated && !cancelled;
 
-                return (
-                  <Table.Tr
-                    key={transaction.id}
-                    className={cancelled ? styles.rowCancelled : styles.tableRow}
+          return (
+            <DataTableRow key={transaction.id} muted={cancelled}>
+              <Table.Td>
+                <Text size="sm" ff="monospace" c="dimmed">
+                  #{transaction.id}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color={transaction.type === 'income' ? 'green' : 'red'}
+                >
+                  {TRANSACTION_TYPE_LABELS[transaction.type] ?? transaction.type}
+                </Badge>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">
+                  {TRANSACTION_CATEGORY_LABELS[transaction.category] ?? transaction.category}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text
+                  size="sm"
+                  fw={600}
+                  c={transaction.type === 'income' ? 'green' : 'red'}
+                  td={cancelled ? 'line-through' : undefined}
+                >
+                  {formatPrice(Math.abs(getSignedAmount(transaction)))}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">
+                  {TRANSACTION_METHOD_LABELS[transaction.method] ?? transaction.method}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                {transaction.receipt_id != null && (
+                  <Text size="xs">Чек #{transaction.receipt_id}</Text>
+                )}
+                {transaction.payout_id != null && (
+                  <Text size="xs">Выплата #{transaction.payout_id}</Text>
+                )}
+                {transaction.receipt_id == null && transaction.payout_id == null && (
+                  <Text size="xs" c="dimmed">
+                    —
+                  </Text>
+                )}
+              </Table.Td>
+              <Table.Td>
+                <Group gap={6}>
+                  {transaction.auto_generated ? (
+                    <Badge size="xs" variant="outline" color="blue">
+                      Авто
+                    </Badge>
+                  ) : (
+                    <Badge size="xs" variant="outline" color="gray">
+                      Ручная
+                    </Badge>
+                  )}
+                  {cancelled && (
+                    <Badge size="xs" variant="light" color="gray">
+                      Отменена
+                    </Badge>
+                  )}
+                </Group>
+              </Table.Td>
+              <Table.Td>
+                <Text size="xs">{formatDateTime(transaction.created_at)}</Text>
+                {transaction.notes && (
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {transaction.notes}
+                  </Text>
+                )}
+              </Table.Td>
+              <Table.Td>
+                {canCancel && (
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color="red"
+                    onClick={() => setCancelTarget(transaction.id)}
                   >
-                    <Table.Td>#{transaction.id}</Table.Td>
-                    <Table.Td>
-                      <Badge
-                        size="sm"
-                        variant="light"
-                        color={transaction.type === 'income' ? 'green' : 'red'}
-                      >
-                        {TRANSACTION_TYPE_LABELS[transaction.type] ?? transaction.type}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      {TRANSACTION_CATEGORY_LABELS[transaction.category] ?? transaction.category}
-                    </Table.Td>
-                    <Table.Td>
-                      <Text
-                        size="sm"
-                        fw={600}
-                        c={transaction.type === 'income' ? 'green' : 'red'}
-                        td={cancelled ? 'line-through' : undefined}
-                      >
-                        {formatPrice(Math.abs(getSignedAmount(transaction)))}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      {TRANSACTION_METHOD_LABELS[transaction.method] ?? transaction.method}
-                    </Table.Td>
-                    <Table.Td>
-                      {transaction.receipt_id != null && (
-                        <Text size="xs">Чек #{transaction.receipt_id}</Text>
-                      )}
-                      {transaction.payout_id != null && (
-                        <Text size="xs">Выплата #{transaction.payout_id}</Text>
-                      )}
-                      {transaction.receipt_id == null && transaction.payout_id == null && (
-                        <Text size="xs" c="dimmed">
-                          —
-                        </Text>
-                      )}
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap={6}>
-                        {transaction.auto_generated ? (
-                          <Badge size="xs" variant="outline" color="blue">
-                            Авто
-                          </Badge>
-                        ) : (
-                          <Badge size="xs" variant="outline" color="gray">
-                            Ручная
-                          </Badge>
-                        )}
-                        {cancelled && (
-                          <Badge size="xs" variant="light" color="gray">
-                            Отменена
-                          </Badge>
-                        )}
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs">{formatDateTime(transaction.created_at)}</Text>
-                      {transaction.notes && (
-                        <Text size="xs" c="dimmed" lineClamp={1}>
-                          {transaction.notes}
-                        </Text>
-                      )}
-                    </Table.Td>
-                    <Table.Td>
-                      {canCancel && (
-                        <Button
-                          size="xs"
-                          variant="subtle"
-                          color="red"
-                          onClick={() => setCancelTarget(transaction.id)}
-                        >
-                          Отменить
-                        </Button>
-                      )}
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })
-            )}
-          </Table.Tbody>
-        </Table>
-      </Card>
+                    Отменить
+                  </Button>
+                )}
+              </Table.Td>
+            </DataTableRow>
+          );
+        })}
+      </DataTable>
 
       <Modal
         opened={formOpen}

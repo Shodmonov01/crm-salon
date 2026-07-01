@@ -21,7 +21,8 @@ import {
   useUpdatePayroll,
 } from '@/shared/api/hooks/usePayrolls';
 import type { Payroll, PayrollCreatePayload, PayrollType, PayrollUpdatePayload } from '@/shared/api/types';
-import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
+import { ConfirmModal, DataTable, DataTableRow } from '@/shared/ui';
 import { formatDate, formatPrice, PAYROLL_TYPE_LABELS, PAYROLL_TYPE_OPTIONS } from '@/shared/lib/format';
 import styles from '../employee-profile.module.css';
 
@@ -98,56 +99,58 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ employeeId }) => {
       {isLoading ? (
         <Skeleton height={160} radius="md" />
       ) : (
-        <Table highlightOnHover verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Тип</Table.Th>
-              <Table.Th>Сумма</Table.Th>
-              <Table.Th>Заметка</Table.Th>
-              <Table.Th>Дата</Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {(payrolls ?? []).length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={5}>
-                  <Text c="dimmed" ta="center" py="md">Выплат пока нет</Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              (payrolls ?? []).map((payroll) => (
-                <Table.Tr key={payroll.id}>
-                  <Table.Td>
-                    <Badge size="sm" variant="light">
-                      {PAYROLL_TYPE_LABELS[payroll.type]}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td fw={600}>{formatPrice(payroll.amount)}</Table.Td>
-                  <Table.Td>{payroll.notes || '—'}</Table.Td>
-                  <Table.Td>{formatDate(payroll.created_at)}</Table.Td>
-                  <Table.Td>
-                    <Menu shadow="sm" width={160} radius="md">
-                      <Menu.Target>
-                        <ActionIcon variant="subtle" color="gray" size="sm">
-                          <DotsThree size={16} weight="bold" />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => openEdit(payroll)}>
-                          Редактировать
-                        </Menu.Item>
-                        <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteTarget(payroll)}>
-                          Удалить
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                  </Table.Td>
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
+        <DataTable
+          compact
+          stickyHeader={false}
+          maxHeight={420}
+          columns={[
+            { key: 'type', label: 'Тип' },
+            { key: 'amount', label: 'Сумма' },
+            { key: 'notes', label: 'Заметка' },
+            { key: 'date', label: 'Дата' },
+            { key: 'actions', label: '', width: 48 },
+          ]}
+          isEmpty={(payrolls ?? []).length === 0}
+          emptyMessage="Выплат пока нет"
+        >
+          {(payrolls ?? []).map((payroll) => (
+            <DataTableRow key={payroll.id}>
+              <Table.Td>
+                <Badge size="sm" variant="light">
+                  {PAYROLL_TYPE_LABELS[payroll.type]}
+                </Badge>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" fw={600}>
+                  {formatPrice(payroll.amount)}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">{payroll.notes || '—'}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">{formatDate(payroll.created_at)}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Menu shadow="sm" width={160} radius="md">
+                  <Menu.Target>
+                    <ActionIcon variant="subtle" color="gray" size="sm">
+                      <DotsThree size={16} weight="bold" />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => openEdit(payroll)}>
+                      Редактировать
+                    </Menu.Item>
+                    <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteTarget(payroll)}>
+                      Удалить
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Table.Td>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       <Modal
@@ -159,7 +162,15 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ employeeId }) => {
         <Select label="Тип выплаты" required data={PAYROLL_TYPE_OPTIONS} mb="md" value={payrollType} onChange={(v) => setPayrollType((v as PayrollType) ?? 'salary')} />
         <NumberInput label="Сумма" required min={1} mb="md" value={amount} onChange={(v) => setAmount(Number(v) || 0)} />
         <TextInput label="Заметка" mb="lg" value={notes} onChange={(e) => setNotes(e.currentTarget.value)} />
-        <Group justify="flex-end">
+        {editing && (
+          <>
+            <Text size="sm" fw={600} mb="xs">
+              История изменений
+            </Text>
+            <AuditLogsPanel tableName="payrolls" recordId={editing.id} />
+          </>
+        )}
+        <Group justify="flex-end" mt={editing ? 'md' : undefined}>
           <Button variant="subtle" color="gray" onClick={() => setFormOpen(false)}>Отмена</Button>
           <Button onClick={submit} loading={createPayroll.isPending || updatePayroll.isPending} disabled={amount <= 0}>
             Сохранить

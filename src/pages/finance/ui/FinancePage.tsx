@@ -3,7 +3,6 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Checkbox,
   Group,
   Modal,
@@ -20,8 +19,9 @@ import { useClients } from '@/shared/api/hooks/useClients';
 import { useMaterials } from '@/shared/api/hooks/useMaterials';
 import { useCreatePayment, usePayments } from '@/shared/api/hooks/usePayments';
 import { useCancelReceipt, useCreateReceipt, useReceipts } from '@/shared/api/hooks/useReceipts';
-import type { PaymentMethod, ReceiptType } from '@/shared/api/types';
-import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import type { Payment, PaymentMethod, Receipt, ReceiptType } from '@/shared/api/types';
+import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
+import { ConfirmModal, DataTable, DataTableRow, ListPage } from '@/shared/ui';
 import {
   formatDateTime,
   formatPrice,
@@ -31,7 +31,6 @@ import {
   RECEIPT_STATUS_LABELS,
   RECEIPT_TYPE_LABELS,
 } from '@/shared/lib/format';
-import styles from './finance-page.module.css';
 import { TransactionsTab } from './TransactionsTab';
 
 export const FinancePage: React.FC = () => {
@@ -39,6 +38,8 @@ export const FinancePage: React.FC = () => {
   const [receiptFormOpen, setReceiptFormOpen] = React.useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = React.useState(false);
   const [cancelTarget, setCancelTarget] = React.useState<number | null>(null);
+  const [historyReceipt, setHistoryReceipt] = React.useState<Receipt | null>(null);
+  const [historyPayment, setHistoryPayment] = React.useState<Payment | null>(null);
 
   const [receiptType, setReceiptType] = React.useState<ReceiptType>('appointment');
   const [appointmentId, setAppointmentId] = React.useState<string | null>(null);
@@ -80,10 +81,27 @@ export const FinancePage: React.FC = () => {
   const materialOptions = React.useMemo(
     () =>
       (materials ?? [])
-        .filter((m) => m.can_be_product)
-        .map((m) => ({ value: String(m.id), label: `${m.name} (${formatPrice(m.sell_price)})` })),
+        .filter((material) => material.quantity > 0)
+        .map((material) => ({
+          value: String(material.id),
+          label: `${material.name} · ${material.quantity} шт. · ${formatPrice(material.sell_price)}`,
+        })),
     [materials],
   );
+
+  const selectedMaterial = React.useMemo(
+    () => (materials ?? []).find((material) => String(material.id) === materialId) ?? null,
+    [materials, materialId],
+  );
+
+  const openReceiptForm = React.useCallback(() => {
+    setReceiptType('appointment');
+    setAppointmentId(null);
+    setClientId(null);
+    setMaterialId(null);
+    setMaterialQty(1);
+    setReceiptFormOpen(true);
+  }, []);
 
   const pendingReceiptOptions = React.useMemo(
     () =>
@@ -147,48 +165,40 @@ export const FinancePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Финансы">
         <Skeleton height={48} mb="md" />
         <Skeleton height={400} radius="md" />
-      </div>
+      </ListPage>
     );
   }
 
   if (isError) {
     return (
-      <div className={styles.page}>
+      <ListPage title="Финансы">
         <Alert color="red" title="Не удалось загрузить финансы">
           Проверьте доступность API
         </Alert>
-      </div>
+      </ListPage>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <div>
-          <Text size="xl" fw={700}>
-            Финансы
-          </Text>
-          <Text size="sm" c="dimmed" mt={2}>
-            {receipts?.length ?? 0} чеков · {payments?.length ?? 0} оплат
-          </Text>
-        </div>
-        <Group>
-          {tab !== 'transactions' && (
-            <>
-              <Button variant="light" onClick={() => openPaymentForm()}>
-                Провести оплату
-              </Button>
-              <Button leftSection={<Plus size={16} />} onClick={() => setReceiptFormOpen(true)}>
-                Новый чек
-              </Button>
-            </>
-          )}
-        </Group>
-      </div>
-
+    <ListPage
+      title="Финансы"
+      subtitle={`${receipts?.length ?? 0} чеков · ${payments?.length ?? 0} оплат`}
+      actions={
+        tab !== 'transactions' ? (
+          <Group>
+            <Button variant="light" onClick={() => openPaymentForm()}>
+              Провести оплату
+            </Button>
+            <Button leftSection={<Plus size={16} />} onClick={openReceiptForm}>
+              Новый чек
+            </Button>
+          </Group>
+        ) : undefined
+      }
+    >
       <Tabs value={tab} onChange={(value) => setTab(value ?? 'receipts')} variant="pills" radius="md">
         <Tabs.List mb="md">
           <Tabs.Tab value="receipts">Чеки</Tabs.Tab>
@@ -198,97 +208,128 @@ export const FinancePage: React.FC = () => {
       </Tabs>
 
       {tab === 'receipts' && (
-        <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
-          <Table highlightOnHover verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>ID</Table.Th>
-                <Table.Th>Тип</Table.Th>
-                <Table.Th>Сумма</Table.Th>
-                <Table.Th>Остаток</Table.Th>
-                <Table.Th>Статус</Table.Th>
-                <Table.Th>Дата</Table.Th>
-                <Table.Th w={160} />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(receipts ?? []).map((receipt) => (
-                <Table.Tr key={receipt.id} className={styles.tableRow}>
-                  <Table.Td>#{receipt.id}</Table.Td>
-                  <Table.Td>{RECEIPT_TYPE_LABELS[receipt.receipt_type] ?? receipt.receipt_type}</Table.Td>
-                  <Table.Td>{formatPrice(receipt.total_amount)}</Table.Td>
-                  <Table.Td>{formatPrice(receipt.remaining_amount)}</Table.Td>
-                  <Table.Td>
-                    <Badge
-                      size="sm"
-                      variant="light"
-                      color={
-                        receipt.status === 'paid'
-                          ? 'green'
-                          : receipt.status === 'cancelled'
-                            ? 'gray'
-                            : 'orange'
-                      }
-                    >
-                      {RECEIPT_STATUS_LABELS[receipt.status] ?? receipt.status}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs">{formatDateTime(receipt.created_at)}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={6}>
-                      {receipt.status === 'pending' && (
-                        <>
-                          <Button size="xs" variant="light" onClick={() => openPaymentForm(receipt.id)}>
-                            Оплатить
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="subtle"
-                            color="red"
-                            onClick={() => setCancelTarget(receipt.id)}
-                          >
-                            Отменить
-                          </Button>
-                        </>
-                      )}
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Card>
+        <DataTable
+          columns={[
+            { key: 'id', label: 'ID' },
+            { key: 'type', label: 'Тип' },
+            { key: 'total', label: 'Сумма' },
+            { key: 'remaining', label: 'Остаток' },
+            { key: 'status', label: 'Статус' },
+            { key: 'date', label: 'Дата' },
+            { key: 'actions', label: '', width: 220 },
+          ]}
+          isEmpty={(receipts ?? []).length === 0}
+          emptyMessage="Чеков нет"
+        >
+          {(receipts ?? []).map((receipt) => (
+            <DataTableRow key={receipt.id}>
+              <Table.Td>
+                <Text size="sm" ff="monospace" c="dimmed">
+                  #{receipt.id}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">
+                  {RECEIPT_TYPE_LABELS[receipt.receipt_type] ?? receipt.receipt_type}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" fw={600}>
+                  {formatPrice(receipt.total_amount)}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">{formatPrice(receipt.remaining_amount)}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color={
+                    receipt.status === 'paid'
+                      ? 'green'
+                      : receipt.status === 'cancelled'
+                        ? 'gray'
+                        : 'orange'
+                  }
+                >
+                  {RECEIPT_STATUS_LABELS[receipt.status] ?? receipt.status}
+                </Badge>
+              </Table.Td>
+              <Table.Td>
+                <Text size="xs">{formatDateTime(receipt.created_at)}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Group gap={6}>
+                  <Button size="xs" variant="subtle" onClick={() => setHistoryReceipt(receipt)}>
+                    История
+                  </Button>
+                  {receipt.status === 'pending' && (
+                    <>
+                      <Button size="xs" variant="light" onClick={() => openPaymentForm(receipt.id)}>
+                        Оплатить
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="subtle"
+                        color="red"
+                        onClick={() => setCancelTarget(receipt.id)}
+                      >
+                        Отменить
+                      </Button>
+                    </>
+                  )}
+                </Group>
+              </Table.Td>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       {tab === 'payments' && (
-        <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
-          <Table highlightOnHover verticalSpacing="sm">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>ID</Table.Th>
-                <Table.Th>Чек</Table.Th>
-                <Table.Th>Сумма</Table.Th>
-                <Table.Th>Способ</Table.Th>
-                <Table.Th>Дата</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(payments ?? []).map((payment) => (
-                <Table.Tr key={payment.id} className={styles.tableRow}>
-                  <Table.Td>#{payment.id}</Table.Td>
-                  <Table.Td>#{payment.receipt_id}</Table.Td>
-                  <Table.Td>{formatPrice(payment.amount)}</Table.Td>
-                  <Table.Td>{PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}</Table.Td>
-                  <Table.Td>
-                    <Text size="xs">{formatDateTime(payment.created_at)}</Text>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Card>
+        <DataTable
+          columns={[
+            { key: 'id', label: 'ID' },
+            { key: 'receipt', label: 'Чек' },
+            { key: 'amount', label: 'Сумма' },
+            { key: 'method', label: 'Способ' },
+            { key: 'date', label: 'Дата' },
+            { key: 'actions', label: '', width: 100 },
+          ]}
+          isEmpty={(payments ?? []).length === 0}
+          emptyMessage="Оплат нет"
+        >
+          {(payments ?? []).map((payment) => (
+            <DataTableRow key={payment.id}>
+              <Table.Td>
+                <Text size="sm" ff="monospace" c="dimmed">
+                  #{payment.id}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">#{payment.receipt_id}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" fw={600}>
+                  {formatPrice(payment.amount)}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm">
+                  {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
+                </Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="xs">{formatDateTime(payment.created_at)}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Button size="xs" variant="subtle" onClick={() => setHistoryPayment(payment)}>
+                  История
+                </Button>
+              </Table.Td>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       {tab === 'transactions' && <TransactionsTab enabled />}
@@ -337,13 +378,22 @@ export const FinancePage: React.FC = () => {
               data={materialOptions}
               value={materialId}
               onChange={setMaterialId}
+              nothingFoundMessage="Нет материалов на складе"
+              comboboxProps={{ withinPortal: true }}
+              placeholder={materialOptions.length === 0 ? 'Сначала добавьте остаток на складе' : 'Выберите материал'}
             />
             <NumberInput
               label="Количество"
               min={1}
+              max={selectedMaterial?.quantity ?? undefined}
               mb="lg"
               value={materialQty}
               onChange={(value) => setMaterialQty(Number(value) || 1)}
+              description={
+                selectedMaterial
+                  ? `Доступно: ${selectedMaterial.quantity} шт.`
+                  : undefined
+              }
             />
           </>
         )}
@@ -351,7 +401,15 @@ export const FinancePage: React.FC = () => {
           <Button variant="subtle" color="gray" onClick={() => setReceiptFormOpen(false)}>
             Отмена
           </Button>
-          <Button onClick={submitReceipt} loading={createReceipt.isPending}>
+          <Button
+            onClick={submitReceipt}
+            loading={createReceipt.isPending}
+            disabled={
+              receiptType === 'appointment'
+                ? !appointmentId
+                : !materialId || materialQty <= 0
+            }
+          >
             Создать
           </Button>
         </Group>
@@ -418,6 +476,43 @@ export const FinancePage: React.FC = () => {
         }
         onClose={() => setCancelTarget(null)}
       />
-    </div>
+
+      <Modal
+        opened={Boolean(historyReceipt)}
+        onClose={() => setHistoryReceipt(null)}
+        title={historyReceipt ? `История чека #${historyReceipt.id}` : 'История чека'}
+        radius="md"
+        size="lg"
+      >
+        {historyReceipt && (
+          <>
+            <Text size="sm" fw={600} mb="xs">
+              Чек
+            </Text>
+            <AuditLogsPanel tableName="receipts" recordId={historyReceipt.id} />
+            {historyReceipt.items.map((item) => (
+              <React.Fragment key={item.id}>
+                <Text size="sm" fw={600} mt="md" mb="xs">
+                  Позиция #{item.id}
+                </Text>
+                <AuditLogsPanel tableName="receipt_items" recordId={item.id} />
+              </React.Fragment>
+            ))}
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        opened={Boolean(historyPayment)}
+        onClose={() => setHistoryPayment(null)}
+        title={historyPayment ? `История оплаты #${historyPayment.id}` : 'История оплаты'}
+        radius="md"
+        size="md"
+      >
+        {historyPayment && (
+          <AuditLogsPanel tableName="payments" recordId={historyPayment.id} />
+        )}
+      </Modal>
+    </ListPage>
   );
 };

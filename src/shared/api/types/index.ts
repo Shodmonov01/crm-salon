@@ -67,6 +67,7 @@ export interface ServiceCreatePayload {
 export interface ServiceUpdatePayload {
   id: number;
   name?: string;
+  price?: number;
   category_id?: number | null;
 }
 
@@ -252,6 +253,17 @@ export interface AppointmentCreatePayload {
 export interface LoginPayload {
   login: string;
   password: string;
+}
+
+export interface StaffLoginResponse extends BaseEntity {
+  login: string;
+  employee: unknown | null;
+  firstname: string;
+  lastname: string | null;
+  middlename: string | null;
+  active: boolean;
+  staff_type: string;
+  tenant_name: string;
 }
 
 export type MeasurementUnit =

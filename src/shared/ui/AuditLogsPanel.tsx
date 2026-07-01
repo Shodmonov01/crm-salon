@@ -2,8 +2,8 @@ import React from 'react';
 import { Alert, Skeleton, Table, Text } from '@mantine/core';
 import { useAuditLogs } from '@/shared/api/hooks/useAuditLogs';
 import type { AuditLogTable } from '@/shared/api/types';
+import { DataTable, DataTableRow } from '@/shared/ui';
 import { formatDateTime } from '@/shared/lib/format';
-import styles from './audit-logs-panel.module.css';
 
 interface AuditLogsPanelProps {
   tableName: AuditLogTable;
@@ -32,50 +32,44 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({ tableName, recor
 
   const items = data?.items ?? [];
 
-  if (items.length === 0) {
-    return (
-      <Text size="sm" c="dimmed">
-        Изменений пока нет
-      </Text>
-    );
-  }
-
   return (
-    <div className={styles.panel}>
-      <Table verticalSpacing="xs" withTableBorder>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Дата</Table.Th>
-            <Table.Th>Действие</Table.Th>
-            <Table.Th>Поле</Table.Th>
-            <Table.Th>Было</Table.Th>
-            <Table.Th>Стало</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {items.map((log) => (
-            <Table.Tr key={log.id}>
-              <Table.Td>
-                <Text size="xs">{formatDateTime(log.changed_at)}</Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="xs">{log.action}</Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="xs">{log.field_name}</Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="xs" c="dimmed">
-                  {log.old_value ?? '—'}
-                </Text>
-              </Table.Td>
-              <Table.Td>
-                <Text size="xs">{log.new_value ?? '—'}</Text>
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </div>
+    <DataTable
+      compact
+      stickyHeader={false}
+      maxHeight={360}
+      columns={[
+        { key: 'date', label: 'Дата' },
+        { key: 'action', label: 'Действие' },
+        { key: 'field', label: 'Поле' },
+        { key: 'old', label: 'Было' },
+        { key: 'new', label: 'Стало' },
+      ]}
+      isEmpty={items.length === 0}
+      emptyMessage="Изменений пока нет"
+    >
+      {items.map((log) => (
+        <DataTableRow key={log.id}>
+          <Table.Td>
+            <Text size="xs">{formatDateTime(log.changed_at)}</Text>
+          </Table.Td>
+          <Table.Td>
+            <Text size="xs" fw={500}>
+              {log.action}
+            </Text>
+          </Table.Td>
+          <Table.Td>
+            <Text size="xs">{log.field_name}</Text>
+          </Table.Td>
+          <Table.Td>
+            <Text size="xs" c="dimmed">
+              {log.old_value ?? '—'}
+            </Text>
+          </Table.Td>
+          <Table.Td>
+            <Text size="xs">{log.new_value ?? '—'}</Text>
+          </Table.Td>
+        </DataTableRow>
+      ))}
+    </DataTable>
   );
 };

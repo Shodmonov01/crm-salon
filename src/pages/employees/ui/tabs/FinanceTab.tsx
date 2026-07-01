@@ -1,6 +1,7 @@
 import React from 'react';
-import { Table, Text, Skeleton, Badge } from '@mantine/core';
+import { Text, Skeleton, Badge, Table } from '@mantine/core';
 import { useEmployeePayrolls } from '@/shared/api/hooks/useEmployees';
+import { DataTable, DataTableRow } from '@/shared/ui';
 import { formatPrice, PAYROLL_TYPE_LABELS } from '@/shared/lib/format';
 import styles from '../employee-profile.module.css';
 
@@ -43,42 +44,50 @@ export const FinanceTab: React.FC<FinanceTabProps> = ({ employeeId }) => {
 
   return (
     <div>
-      <Text fw={600} mb="md">Финансовый отчёт · итого {formatPrice(total)}</Text>
+      <Text fw={600} mb="md">
+        Финансовый отчёт · итого {formatPrice(total)}
+      </Text>
 
-      <Text size="sm" fw={600} mb="sm">По месяцам</Text>
-      <Table highlightOnHover verticalSpacing="sm" mb="xl">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Период</Table.Th>
-            <Table.Th>Итог</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {summary.length === 0 ? (
-            <Table.Tr>
-              <Table.Td colSpan={2}>
-                <Text c="dimmed" ta="center" py="md">Нет данных</Text>
-              </Table.Td>
-            </Table.Tr>
-          ) : summary.map(([period, amount]) => (
-            <Table.Tr key={period}>
-              <Table.Td>{period}</Table.Td>
-              <Table.Td>
-                <Badge color={amount < 0 ? 'red' : 'green'} variant="light">
-                  {formatPrice(amount)}
-                </Badge>
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+      <Text size="sm" fw={600} mb="sm">
+        По месяцам
+      </Text>
+      <DataTable
+        compact
+        stickyHeader={false}
+        maxHeight={280}
+        columns={[
+          { key: 'period', label: 'Период' },
+          { key: 'total', label: 'Итог' },
+        ]}
+        isEmpty={summary.length === 0}
+        emptyMessage="Нет данных"
+      >
+        {summary.map(([period, amount]) => (
+          <DataTableRow key={period}>
+            <Table.Td>
+              <Text size="sm">{period}</Text>
+            </Table.Td>
+            <Table.Td>
+              <Badge color={amount < 0 ? 'red' : 'green'} variant="light">
+                {formatPrice(amount)}
+              </Badge>
+            </Table.Td>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
-      <Text size="sm" fw={600} mb="sm">По типам</Text>
+      <Text size="sm" fw={600} mb="sm" mt="xl">
+        По типам
+      </Text>
       <div className={styles.salaryGrid}>
         {byType.map(([type, amount]) => (
           <div key={type} className={styles.salaryItem}>
-            <Text size="xs" c="dimmed">{PAYROLL_TYPE_LABELS[type as keyof typeof PAYROLL_TYPE_LABELS] ?? type}</Text>
-            <Text size="sm" fw={600}>{formatPrice(amount)}</Text>
+            <Text size="xs" c="dimmed">
+              {PAYROLL_TYPE_LABELS[type as keyof typeof PAYROLL_TYPE_LABELS] ?? type}
+            </Text>
+            <Text size="sm" fw={600}>
+              {formatPrice(amount)}
+            </Text>
           </div>
         ))}
       </div>

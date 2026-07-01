@@ -32,7 +32,8 @@ import type {
   WorkScheduleCreatePayload,
   WorkScheduleUpdatePayload,
 } from '@/shared/api/types';
-import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
+import { ConfirmModal, DataTable, DataTableRow } from '@/shared/ui';
 import {
   ABSENCE_TYPE_LABELS,
   ABSENCE_TYPE_OPTIONS,
@@ -134,36 +135,36 @@ export const ScheduleTab: React.FC<ScheduleTabProps> = ({ employeeId }) => {
             </Button>
           </div>
           {isLoading ? <Skeleton height={160} radius="md" /> : (
-            <Table highlightOnHover verticalSpacing="sm">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>День</Table.Th>
-                  <Table.Th>Начало</Table.Th>
-                  <Table.Th>Конец</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {schedules.length === 0 ? (
-                  <Table.Tr><Table.Td colSpan={4}><Text c="dimmed" ta="center" py="md">Смены не заданы</Text></Table.Td></Table.Tr>
-                ) : schedules.map((schedule) => (
-                  <Table.Tr key={schedule.id}>
-                    <Table.Td>{formatDate(schedule.day)}</Table.Td>
-                    <Table.Td>{formatTime(schedule.start_time)}</Table.Td>
-                    <Table.Td>{formatTime(schedule.end_time)}</Table.Td>
-                    <Table.Td>
-                      <Menu shadow="sm" width={160} radius="md">
-                        <Menu.Target><ActionIcon variant="subtle" color="gray" size="sm"><DotsThree size={16} weight="bold" /></ActionIcon></Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => { setEditingSchedule(schedule); setDay(schedule.day); setStartTime(formatTime(schedule.start_time)); setEndTime(formatTime(schedule.end_time)); setScheduleFormOpen(true); }}>Редактировать</Menu.Item>
-                          <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteScheduleTarget(schedule)}>Удалить</Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+            <DataTable
+              compact
+              stickyHeader={false}
+              maxHeight={360}
+              columns={[
+                { key: 'day', label: 'День' },
+                { key: 'start', label: 'Начало' },
+                { key: 'end', label: 'Конец' },
+                { key: 'actions', label: '', width: 48 },
+              ]}
+              isEmpty={schedules.length === 0}
+              emptyMessage="Смены не заданы"
+            >
+              {schedules.map((schedule) => (
+                <DataTableRow key={schedule.id}>
+                  <Table.Td>{formatDate(schedule.day)}</Table.Td>
+                  <Table.Td>{formatTime(schedule.start_time)}</Table.Td>
+                  <Table.Td>{formatTime(schedule.end_time)}</Table.Td>
+                  <Table.Td>
+                    <Menu shadow="sm" width={160} radius="md">
+                      <Menu.Target><ActionIcon variant="subtle" color="gray" size="sm"><DotsThree size={16} weight="bold" /></ActionIcon></Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => { setEditingSchedule(schedule); setDay(schedule.day); setStartTime(formatTime(schedule.start_time)); setEndTime(formatTime(schedule.end_time)); setScheduleFormOpen(true); }}>Редактировать</Menu.Item>
+                        <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteScheduleTarget(schedule)}>Удалить</Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </Table.Td>
+                </DataTableRow>
+              ))}
+            </DataTable>
           )}
         </Tabs.Panel>
 
@@ -175,38 +176,38 @@ export const ScheduleTab: React.FC<ScheduleTabProps> = ({ employeeId }) => {
             </Button>
           </div>
           {isLoading ? <Skeleton height={160} radius="md" /> : (
-            <Table highlightOnHover verticalSpacing="sm">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Тип</Table.Th>
-                  <Table.Th>С</Table.Th>
-                  <Table.Th>По</Table.Th>
-                  <Table.Th>Причина</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {absences.length === 0 ? (
-                  <Table.Tr><Table.Td colSpan={5}><Text c="dimmed" ta="center" py="md">Отсутствий нет</Text></Table.Td></Table.Tr>
-                ) : absences.map((absence) => (
-                  <Table.Tr key={absence.id}>
-                    <Table.Td><Badge variant="light">{ABSENCE_TYPE_LABELS[absence.absence_type]}</Badge></Table.Td>
-                    <Table.Td>{formatDate(absence.start_date)}</Table.Td>
-                    <Table.Td>{formatDate(absence.end_date)}</Table.Td>
-                    <Table.Td>{absence.reason ?? '—'}</Table.Td>
-                    <Table.Td>
-                      <Menu shadow="sm" width={160} radius="md">
-                        <Menu.Target><ActionIcon variant="subtle" color="gray" size="sm"><DotsThree size={16} weight="bold" /></ActionIcon></Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => { setEditingAbsence(absence); setStartDate(absence.start_date); setEndDate(absence.end_date); setAbsenceType(absence.absence_type); setReason(absence.reason ?? ''); setAbsenceFormOpen(true); }}>Редактировать</Menu.Item>
-                          <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteAbsenceTarget(absence)}>Удалить</Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+            <DataTable
+              compact
+              stickyHeader={false}
+              maxHeight={360}
+              columns={[
+                { key: 'type', label: 'Тип' },
+                { key: 'from', label: 'С' },
+                { key: 'to', label: 'По' },
+                { key: 'reason', label: 'Причина' },
+                { key: 'actions', label: '', width: 48 },
+              ]}
+              isEmpty={absences.length === 0}
+              emptyMessage="Отсутствий нет"
+            >
+              {absences.map((absence) => (
+                <DataTableRow key={absence.id}>
+                  <Table.Td><Badge variant="light">{ABSENCE_TYPE_LABELS[absence.absence_type]}</Badge></Table.Td>
+                  <Table.Td>{formatDate(absence.start_date)}</Table.Td>
+                  <Table.Td>{formatDate(absence.end_date)}</Table.Td>
+                  <Table.Td>{absence.reason ?? '—'}</Table.Td>
+                  <Table.Td>
+                    <Menu shadow="sm" width={160} radius="md">
+                      <Menu.Target><ActionIcon variant="subtle" color="gray" size="sm"><DotsThree size={16} weight="bold" /></ActionIcon></Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item leftSection={<PencilSimple size={14} />} onClick={() => { setEditingAbsence(absence); setStartDate(absence.start_date); setEndDate(absence.end_date); setAbsenceType(absence.absence_type); setReason(absence.reason ?? ''); setAbsenceFormOpen(true); }}>Редактировать</Menu.Item>
+                        <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => setDeleteAbsenceTarget(absence)}>Удалить</Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </Table.Td>
+                </DataTableRow>
+              ))}
+            </DataTable>
           )}
         </Tabs.Panel>
       </Tabs>
@@ -217,7 +218,15 @@ export const ScheduleTab: React.FC<ScheduleTabProps> = ({ employeeId }) => {
           <TextInput label="Начало" type="time" value={startTime} onChange={(e) => setStartTime(e.currentTarget.value)} />
           <TextInput label="Конец" type="time" value={endTime} onChange={(e) => setEndTime(e.currentTarget.value)} />
         </Group>
-        <Group justify="flex-end">
+        {editingSchedule && (
+          <>
+            <Text size="sm" fw={600} mb="xs">
+              История изменений
+            </Text>
+            <AuditLogsPanel tableName="employee_work_schedules" recordId={editingSchedule.id} />
+          </>
+        )}
+        <Group justify="flex-end" mt={editingSchedule ? 'md' : undefined}>
           <Button variant="subtle" color="gray" onClick={() => setScheduleFormOpen(false)}>Отмена</Button>
           <Button onClick={submitSchedule} loading={createSchedule.isPending || updateSchedule.isPending}>Сохранить</Button>
         </Group>
@@ -230,7 +239,15 @@ export const ScheduleTab: React.FC<ScheduleTabProps> = ({ employeeId }) => {
           <TextInput label="По" type="date" value={endDate} onChange={(e) => setEndDate(e.currentTarget.value)} />
         </Group>
         <TextInput label="Причина" mb="lg" value={reason} onChange={(e) => setReason(e.currentTarget.value)} />
-        <Group justify="flex-end">
+        {editingAbsence && (
+          <>
+            <Text size="sm" fw={600} mb="xs">
+              История изменений
+            </Text>
+            <AuditLogsPanel tableName="employee_absences" recordId={editingAbsence.id} />
+          </>
+        )}
+        <Group justify="flex-end" mt={editingAbsence ? 'md' : undefined}>
           <Button variant="subtle" color="gray" onClick={() => setAbsenceFormOpen(false)}>Отмена</Button>
           <Button onClick={submitAbsence} loading={createAbsence.isPending || updateAbsence.isPending}>Сохранить</Button>
         </Group>

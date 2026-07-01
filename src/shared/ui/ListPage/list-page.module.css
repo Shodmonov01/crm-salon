@@ -1,0 +1,30 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--mantine-color-gray-0);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.titleBlock {
+  min-width: 0;
+}
+
+.filters {
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  max-width: 360px;
+}
