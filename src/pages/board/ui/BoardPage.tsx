@@ -16,6 +16,7 @@ import {
   useAppointment,
   useCreateAppointment,
   useDeleteAppointment,
+  useCancelAppointment,
 } from '@/shared/api/hooks/useAppointments';
 import { useClients } from '@/shared/api/hooks/useClients';
 import { useServices } from '@/shared/api/hooks/useServices';
@@ -109,7 +110,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onClick,
 }) => {
   const apptStyle = getApptStyle(appt);
-  const status = appt.paid ? 'confirmed' : 'pending';
+  const status = appt.cancelled ? 'cancelled' : appt.paid ? 'confirmed' : 'pending';
 
   return (
     <div
@@ -118,8 +119,9 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       className={`${styles.appt} ${styles[`appt_${status}`]}`}
       style={{
         ...apptStyle,
-        borderLeftColor: color,
-        backgroundColor: lightColor,
+        borderLeftColor: appt.cancelled ? 'var(--mantine-color-gray-4)' : color,
+        backgroundColor: appt.cancelled ? 'var(--mantine-color-gray-1)' : lightColor,
+        opacity: appt.cancelled ? 0.6 : 1,
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -127,7 +129,15 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Text size="xs" fw={700} lineClamp={1} style={{ color }}>
+      <Text 
+        size="xs" 
+        fw={700} 
+        lineClamp={1} 
+        style={{ 
+          color: appt.cancelled ? 'var(--mantine-color-gray-6)' : color,
+          textDecoration: appt.cancelled ? 'line-through' : 'none'
+        }}
+      >
         {appt.client}
       </Text>
       {showEmployee && apptStyle.height > 40 && (
@@ -178,6 +188,7 @@ export const BoardPage: React.FC = () => {
   const { data: services } = useServices();
   const createAppointment = useCreateAppointment();
   const deleteAppointment = useDeleteAppointment();
+  const cancelAppointment = useCancelAppointment();
 
   const [date, setDate] = React.useState(() => new Date());
   const [view, setView] = React.useState<'day' | 'week'>('day');
@@ -190,6 +201,7 @@ export const BoardPage: React.FC = () => {
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editingEmployeeId, setEditingEmployeeId] = React.useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = React.useState(false);
 
   const { data: editingAppointment, isLoading: editingLoading } = useAppointment(editingId ?? 0);
 
@@ -269,6 +281,7 @@ export const BoardPage: React.FC = () => {
     setEditingEmployeeId(null);
     setFormMode('create');
     setDeleteConfirmOpen(false);
+    setCancelConfirmOpen(false);
   }, []);
 
   React.useEffect(() => {
@@ -347,6 +360,13 @@ export const BoardPage: React.FC = () => {
     });
   }, [editingId, deleteAppointment, closeForm]);
 
+  const handleCancel = React.useCallback(() => {
+    if (!editingId) return;
+    cancelAppointment.mutate(editingId, {
+      onSuccess: () => closeForm()
+    });
+  }, [editingId, cancelAppointment, closeForm]);
+
   const selectedEmployee = React.useMemo(
     () => activeEmployees.find((e) => String(e.id) === formValues.employeeId),
     [activeEmployees, formValues.employeeId]
@@ -367,7 +387,7 @@ export const BoardPage: React.FC = () => {
     [services, selectedEmployee]
   );
 
-  const isSaving = createAppointment.isPending || deleteAppointment.isPending;
+  const isSaving = createAppointment.isPending || deleteAppointment.isPending || cancelAppointment.isPending;
   const formLoading = isSaving || (formMode === 'edit' && editingLoading && !editingAppointment);
   
   // Показываем минимальный скелетон только при первой загрузке КРИТИЧНЫХ данных
@@ -621,6 +641,7 @@ export const BoardPage: React.FC = () => {
         mode={formMode}
         loading={formLoading}
         paid={editingAppointment?.paid}
+        cancelled={!!editingAppointment?.cancelled_at}
         appointment={editingAppointment ?? null}
         values={formValues}
         clientOptions={clientOptions}
@@ -631,6 +652,7 @@ export const BoardPage: React.FC = () => {
         onClose={closeForm}
         onSubmit={handleFormSubmit}
         onDelete={formMode === 'edit' ? () => setDeleteConfirmOpen(true) : undefined}
+        onCancel={formMode === 'edit' ? () => setCancelConfirmOpen(true) : undefined}
       />
 
       <ConfirmModal
@@ -640,6 +662,15 @@ export const BoardPage: React.FC = () => {
         loading={deleteAppointment.isPending}
         onConfirm={handleDelete}
         onClose={() => setDeleteConfirmOpen(false)}
+      />
+
+      <ConfirmModal
+        opened={cancelConfirmOpen}
+        title='Отменить запись'
+        message='Отменить эту запись? Она останется в системе, но будет помечена как отменённая.'
+        loading={cancelAppointment.isPending}
+        onConfirm={handleCancel}
+        onClose={() => setCancelConfirmOpen(false)}
       />
     </div>
   );

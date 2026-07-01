@@ -22,6 +22,7 @@ export interface BoardAppointment {
   service: string;
   employeeName: string;
   paid: boolean;
+  cancelled: boolean;
   totalPrice: number;
   notes: string | null;
 }
@@ -109,6 +110,7 @@ export const mapAppointmentsToBoard = (
         service: serviceName,
         employeeName,
         paid: appt.paid,
+        cancelled: !!appt.cancelled_at,
         totalPrice: appt.total_price,
         notes: appt.notes
       });

@@ -32,6 +32,7 @@ import {
   RECEIPT_TYPE_LABELS,
 } from '@/shared/lib/format';
 import styles from './finance-page.module.css';
+import { TransactionsTab } from './TransactionsTab';
 
 export const FinancePage: React.FC = () => {
   const [tab, setTab] = React.useState<string>('receipts');
@@ -175,12 +176,16 @@ export const FinancePage: React.FC = () => {
           </Text>
         </div>
         <Group>
-          <Button variant="light" onClick={() => openPaymentForm()}>
-            Провести оплату
-          </Button>
-          <Button leftSection={<Plus size={16} />} onClick={() => setReceiptFormOpen(true)}>
-            Новый чек
-          </Button>
+          {tab !== 'transactions' && (
+            <>
+              <Button variant="light" onClick={() => openPaymentForm()}>
+                Провести оплату
+              </Button>
+              <Button leftSection={<Plus size={16} />} onClick={() => setReceiptFormOpen(true)}>
+                Новый чек
+              </Button>
+            </>
+          )}
         </Group>
       </div>
 
@@ -188,10 +193,11 @@ export const FinancePage: React.FC = () => {
         <Tabs.List mb="md">
           <Tabs.Tab value="receipts">Чеки</Tabs.Tab>
           <Tabs.Tab value="payments">Оплаты</Tabs.Tab>
+          <Tabs.Tab value="transactions">Транзакции</Tabs.Tab>
         </Tabs.List>
       </Tabs>
 
-      {tab === 'receipts' ? (
+      {tab === 'receipts' && (
         <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
           <Table highlightOnHover verticalSpacing="sm">
             <Table.Thead>
@@ -254,7 +260,9 @@ export const FinancePage: React.FC = () => {
             </Table.Tbody>
           </Table>
         </Card>
-      ) : (
+      )}
+
+      {tab === 'payments' && (
         <Card padding={0} radius="lg" shadow="xs" className={styles.tableCard}>
           <Table highlightOnHover verticalSpacing="sm">
             <Table.Thead>
@@ -282,6 +290,8 @@ export const FinancePage: React.FC = () => {
           </Table>
         </Card>
       )}
+
+      {tab === 'transactions' && <TransactionsTab enabled />}
 
       <Modal
         opened={receiptFormOpen}

@@ -1,7 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiPost, authStorage } from '@/shared/api/client';
+import { apiPatch, apiPost, authStorage } from '@/shared/api/client';
 import type { LoginPayload } from '@/shared/api/types';
 import { addNotification } from '@/shared/lib/notifications';
+
+export interface ChangePasswordPayload {
+  old_password: string;
+  new_password: string;
+}
+
+export interface PasswordResetResponse {
+  new_password: string;
+}
 
 export const useLogin = () =>
   useMutation({
@@ -44,5 +53,38 @@ export const useRefreshToken = () =>
     mutationFn: () => apiPost<void, Record<string, never>>('/api/v1/auth/refresh', {}),
     onSuccess: () => {
       authStorage.setAuthenticated(true);
+    },
+  });
+
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: (payload: ChangePasswordPayload) =>
+      apiPost<void, ChangePasswordPayload>('/api/v1/auth/change-password', payload),
+    onSuccess: () => {
+      addNotification.success({ message: 'Пароль успешно изменён' });
+    },
+    onError: (error: Error) => {
+      addNotification.error({
+        message: error.message || 'Не удалось изменить пароль',
+      });
+    },
+  });
+
+export const useResetPassword = () =>
+  useMutation({
+    mutationFn: (userId: number) =>
+      apiPatch<PasswordResetResponse, Record<string, never>>(
+        `/api/v1/auth/reset-password?id=${userId}`,
+        {},
+      ),
+    onSuccess: (result) => {
+      addNotification.success({
+        message: `Новый пароль: ${result.new_password}`,
+      });
+    },
+    onError: (error: Error) => {
+      addNotification.error({
+        message: error.message || 'Не удалось сбросить пароль',
+      });
     },
   });

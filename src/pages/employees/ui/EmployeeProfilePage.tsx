@@ -10,13 +10,17 @@ import {
   Tabs,
   Skeleton,
   Alert,
+  Menu,
+  CopyButton,
+  Tooltip,
 } from '@mantine/core';
-import { ArrowLeft, PencilSimple, Trash, Phone, Cake } from '@phosphor-icons/react';
+import { ArrowLeft, PencilSimple, Trash, Phone, Cake, DotsThree, LockKey, Copy, Check } from '@phosphor-icons/react';
 import {
   useEmployee,
   useUpdateEmployee,
   useDeleteEmployee,
 } from '@/shared/api/hooks/useEmployees';
+import { useResetPassword } from '@/shared/api/hooks/useAuth';
 import type { EmployeeCreatePayload, EmployeeUpdatePayload } from '@/shared/api/types';
 import { AuditLogsPanel } from '@/shared/ui/AuditLogsPanel';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
@@ -47,6 +51,9 @@ export const EmployeeProfilePage: React.FC = () => {
   const { data: employee, isLoading, isError } = useEmployee(employeeId);
   const updateEmployee = useUpdateEmployee();
   const deleteEmployee = useDeleteEmployee();
+  const resetPassword = useResetPassword();
+
+  const [resetPasswordResult, setResetPasswordResult] = React.useState<string | null>(null);
 
   const tabParam = searchParams.get('tab');
   const activeTab: TabValue = isTabValue(tabParam) ? tabParam : 'overview';
@@ -68,6 +75,14 @@ export const EmployeeProfilePage: React.FC = () => {
   const handleDelete = React.useCallback(() => {
     deleteEmployee.mutate(employeeId, { onSuccess: () => navigate('/employees') });
   }, [deleteEmployee, employeeId, navigate]);
+
+  const handleResetPassword = React.useCallback(() => {
+    resetPassword.mutate(employeeId, {
+      onSuccess: (result) => {
+        setResetPasswordResult(result.new_password);
+      },
+    });
+  }, [resetPassword, employeeId]);
 
   if (isLoading) {
     return (
@@ -130,11 +145,64 @@ export const EmployeeProfilePage: React.FC = () => {
           <Button variant="light" leftSection={<PencilSimple size={16} />} onClick={() => setEditOpen(true)}>
             Редактировать
           </Button>
-          <ActionIcon variant="light" color="red" size="lg" onClick={() => setDeleteOpen(true)} aria-label="Удалить">
-            <Trash size={18} />
-          </ActionIcon>
+          <Menu shadow="md" width={200} position="bottom-end" radius="md">
+            <Menu.Target>
+              <ActionIcon variant="light" color="gray" size="lg" aria-label="Ещё действия">
+                <DotsThree size={18} weight="bold" />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<LockKey size={14} />}
+                onClick={handleResetPassword}
+                disabled={resetPassword.isPending}
+              >
+                Сбросить пароль
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={<Trash size={14} />}
+                color="red"
+                onClick={() => setDeleteOpen(true)}
+              >
+                Удалить
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </Card>
+
+      {resetPasswordResult && (
+        <Alert
+          color="blue"
+          title="Пароль сброшен"
+          onClose={() => setResetPasswordResult(null)}
+          withCloseButton
+        >
+          <Group gap="sm">
+            <Text size="sm" fw={600}>
+              Новый пароль: {resetPasswordResult}
+            </Text>
+            <CopyButton value={resetPasswordResult}>
+              {({ copied, copy }) => (
+                <Tooltip label={copied ? 'Скопировано!' : 'Скопировать'} withArrow>
+                  <ActionIcon
+                    color={copied ? 'teal' : 'blue'}
+                    variant="light"
+                    onClick={copy}
+                    size="sm"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </CopyButton>
+          </Group>
+          <Text size="xs" c="dimmed" mt="xs">
+            Обязательно передайте этот пароль сотруднику
+          </Text>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onChange={handleTabChange} radius="md" keepMounted={false}>
         <Tabs.List>

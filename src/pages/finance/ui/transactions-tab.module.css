@@ -1,0 +1,24 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryCard {
+  background: var(--mantine-color-white);
+}
+
+.tableCard {
+  overflow: hidden;
+}
+
+.tableRow:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.rowCancelled {
+  opacity: 0.55;
+}
+
+.rowCancelled:hover {
+  background: var(--mantine-color-gray-0);
+}

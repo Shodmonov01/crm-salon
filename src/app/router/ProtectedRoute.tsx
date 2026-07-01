@@ -8,6 +8,9 @@ export const ProtectedRoute: React.FC = () => {
   const refreshToken = useRefreshToken();
 
   React.useEffect(() => {
+    // Очистить localStorage если AUTH отключён (для dev)
+    authStorage.clearIfAuthDisabled();
+
     if (AUTH_ENABLED && authStorage.isAuthenticated()) {
       refreshToken.mutate();
     }

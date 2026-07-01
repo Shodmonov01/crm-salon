@@ -34,7 +34,12 @@ export const useCreateNotification = () => {
         '/api/v1/notifications',
         payload,
       ),
-    onSuccess: () => {
+    onSuccess: (created) => {
+      queryClient.setQueryData<SalonNotification[]>(queryKeys.notifications.all, (old) => {
+        if (!old) return [created];
+        if (old.some((item) => item.id === created.id)) return old;
+        return [created, ...old];
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
       addNotification.success({ message: 'Уведомление создано' });
     },

@@ -225,6 +225,7 @@ export interface Appointment extends BaseEntity {
   total_price: number;
   records: AppointmentRecordNested[] | null;
   notes: string | null;
+  cancelled_at: string | null;
 }
 
 export interface AppointmentServiceInput {
@@ -470,4 +471,39 @@ export interface AppointmentRecordCreatePayload {
 export interface ServicesImportResult {
   created_categories: number;
   created_services: number;
+}
+
+export type TransactionType = 'income' | 'expense';
+
+export type TransactionCategory =
+  | 'receipt'
+  | 'employee payment'
+  | 'utility'
+  | 'internet'
+  | 'telephone'
+  | 'other';
+
+export type ManualTransactionCategory = 'utility' | 'internet' | 'telephone' | 'other';
+
+export type TransactionMethod = 'card' | 'cash' | 'bank transfer' | 'deposit';
+
+export interface Transaction extends BaseEntity {
+  amount: number;
+  type: TransactionType;
+  method: TransactionMethod;
+  category: TransactionCategory;
+  receipt_id: number | null;
+  payout_id: number | null;
+  notes: string | null;
+  auto_generated: boolean;
+  /** Нет в API — см. docs/backend-changes.md; выставляется локально после cancel */
+  cancelled?: boolean;
+}
+
+export interface TransactionCreatePayload {
+  type: TransactionType;
+  category: ManualTransactionCategory;
+  method: TransactionMethod;
+  amount: number;
+  notes?: string | null;
 }

@@ -1,5 +1,8 @@
 import { API_BASE_URL, AUTH_ENABLED } from '@/shared/config/env';
 
+// Re-export для удобства
+export { API_BASE_URL };
+
 export class ApiError extends Error {
   status: number;
 
@@ -33,6 +36,12 @@ export const authStorage = {
     if (value) {
       localStorage.setItem(AUTH_KEY, '1');
     } else {
+      localStorage.removeItem(AUTH_KEY);
+    }
+  },
+  // Очистить auth при переключении режима разработки
+  clearIfAuthDisabled: (): void => {
+    if (!AUTH_ENABLED) {
       localStorage.removeItem(AUTH_KEY);
     }
   },

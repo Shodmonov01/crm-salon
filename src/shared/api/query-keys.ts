@@ -63,6 +63,10 @@ export const queryKeys = {
     all: ['notifications'] as const,
     detail: (id: number) => ['notifications', id] as const,
   },
+  transactions: {
+    all: ['transactions'] as const,
+    detail: (id: number) => ['transactions', id] as const,
+  },
   auditLogs: {
     list: (tableName: string, recordId: number, page: number) =>
       ['audit-logs', tableName, recordId, page] as const,

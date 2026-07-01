@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   apiDelete,
   apiFetchAllPost,
+  apiPatch,
   apiPost,
   apiPostGetMany,
   apiRequest,
@@ -45,6 +46,26 @@ export const useCreateAppointment = () => {
     },
     onError: (error: Error) => {
       addNotification.error({ message: error.message || 'Не удалось создать запись' });
+    },
+  });
+};
+
+export const useCancelAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiPatch<Appointment, Record<string, never>>(
+        `/api/v1/appointments/${id}/cancel`,
+        {},
+      ),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.appointments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.appointments.detail(id) });
+      addNotification.success({ message: 'Запись отменена' });
+    },
+    onError: (error: Error) => {
+      addNotification.error({ message: error.message || 'Не удалось отменить запись' });
     },
   });
 };

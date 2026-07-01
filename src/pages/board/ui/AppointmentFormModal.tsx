@@ -35,6 +35,7 @@ interface AppointmentFormModalProps {
   mode: 'create' | 'edit';
   loading?: boolean;
   paid?: boolean;
+  cancelled?: boolean;
   appointment?: Appointment | null;
   values: AppointmentFormValues;
   clientOptions: { value: string; label: string }[];
@@ -45,6 +46,7 @@ interface AppointmentFormModalProps {
   onClose: () => void;
   onSubmit: () => void;
   onDelete?: () => void;
+  onCancel?: () => void;
 }
 
 export type { AppointmentFormValues };
@@ -54,6 +56,7 @@ export const AppointmentFormModal: React.FC<AppointmentFormModalProps> = ({
   mode,
   loading = false,
   paid = false,
+  cancelled = false,
   appointment = null,
   values,
   clientOptions,
@@ -64,6 +67,7 @@ export const AppointmentFormModal: React.FC<AppointmentFormModalProps> = ({
   onClose,
   onSubmit,
   onDelete,
+  onCancel,
 }) => {
   const selectedClient = React.useMemo(
     () => clients.find((client) => String(client.id) === values.clientId),
@@ -142,9 +146,16 @@ export const AppointmentFormModal: React.FC<AppointmentFormModalProps> = ({
           {mode === 'edit' ? 'Редактирование записи' : 'Создание новой записи'}
         </Text>
         {mode === 'edit' && (
-          <Badge color={paid ? 'green' : 'orange'} variant="light">
-            {paid ? 'Оплачено' : 'Не оплачено'}
-          </Badge>
+          <Group gap="xs">
+            {cancelled && (
+              <Badge color="red" variant="light">
+                Отменена
+              </Badge>
+            )}
+            <Badge color={paid ? 'green' : 'orange'} variant="light">
+              {paid ? 'Оплачено' : 'Не оплачено'}
+            </Badge>
+          </Group>
         )}
       </Group>
 
@@ -316,14 +327,21 @@ export const AppointmentFormModal: React.FC<AppointmentFormModalProps> = ({
           Отмена
         </Button>
         <div className={styles.footerActions}>
+          {mode === 'edit' && onCancel && !cancelled && (
+            <Button variant="light" color="orange" onClick={onCancel} loading={loading}>
+              Отменить запись
+            </Button>
+          )}
           {mode === 'edit' && onDelete && (
             <Button variant="light" color="red" onClick={onDelete} loading={loading}>
               Удалить
             </Button>
           )}
-          <Button onClick={onSubmit} loading={loading} disabled={!isValid}>
-            {mode === 'edit' ? 'Сохранить' : 'Создать'}
-          </Button>
+          {!cancelled && (
+            <Button onClick={onSubmit} loading={loading} disabled={!isValid}>
+              {mode === 'edit' ? 'Сохранить' : 'Создать'}
+            </Button>
+          )}
         </div>
       </div>
     </Modal>

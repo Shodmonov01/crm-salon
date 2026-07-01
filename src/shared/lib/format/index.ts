@@ -179,6 +179,42 @@ export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   other: 'Другое'
 };
 
+export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  income: 'Доход',
+  expense: 'Расход'
+};
+
+export const TRANSACTION_TYPE_OPTIONS = Object.entries(TRANSACTION_TYPE_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
+
+export const TRANSACTION_CATEGORY_LABELS: Record<string, string> = {
+  receipt: 'Оплата чека',
+  'employee payment': 'Выплата сотруднику',
+  utility: 'Коммунальные',
+  internet: 'Интернет',
+  telephone: 'Телефон',
+  other: 'Прочее'
+};
+
+export const MANUAL_TRANSACTION_CATEGORY_OPTIONS = [
+  { value: 'utility', label: 'Коммунальные' },
+  { value: 'internet', label: 'Интернет' },
+  { value: 'telephone', label: 'Телефон' },
+  { value: 'other', label: 'Прочее' }
+] as const;
+
+export const TRANSACTION_METHOD_LABELS: Record<string, string> = {
+  cash: 'Наличные',
+  card: 'Карта',
+  'bank transfer': 'Банковский перевод',
+  deposit: 'Депозит'
+};
+
+export const TRANSACTION_METHOD_OPTIONS = Object.entries(TRANSACTION_METHOD_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
+
 export const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&

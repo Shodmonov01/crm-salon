@@ -3,18 +3,21 @@ import {
   ActionIcon,
   Avatar,
   Badge,
+  Button,
   Group,
   Indicator,
   Menu,
+  Modal,
+  PasswordInput,
   Popover,
   ScrollArea,
   Stack,
   Text,
 } from '@mantine/core';
-import { Bell, List, Scissors, SignOut, User } from '@phosphor-icons/react';
+import { Bell, Key, List, Scissors, SignOut, User } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/shared/api/hooks/useNotifications';
-import { useLogout } from '@/shared/api/hooks/useAuth';
+import { useLogout, useChangePassword } from '@/shared/api/hooks/useAuth';
 import { useNotificationsWs } from '@/shared/lib/notifications/NotificationsWsProvider';
 import { formatDateTime } from '@/shared/lib/format';
 import { AUTH_ENABLED } from '@/shared/config/env';
@@ -29,11 +32,36 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
   const { connected } = useNotificationsWs();
   const { data: notifications } = useNotifications();
   const logout = useLogout();
+  const changePassword = useChangePassword();
   const recent = (notifications ?? []).slice(0, 5);
+
+  const [changePasswordOpen, setChangePasswordOpen] = React.useState(false);
+  const [oldPassword, setOldPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
 
   const handleLogout = () => {
     logout.mutate();
   };
+
+  const handleChangePassword = () => {
+    if (newPassword !== confirmPassword) {
+      return;
+    }
+    changePassword.mutate(
+      { old_password: oldPassword, new_password: newPassword },
+      {
+        onSuccess: () => {
+          setChangePasswordOpen(false);
+          setOldPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+        },
+      }
+    );
+  };
+
+  const isPasswordValid = oldPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 6;
 
   return (
     <header className={styles.header}>
@@ -124,6 +152,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
               <Menu.Item leftSection={<User size={14} />} disabled>
                 Профиль
               </Menu.Item>
+              <Menu.Item
+                leftSection={<Key size={14} />}
+                onClick={() => setChangePasswordOpen(true)}
+              >
+                Сменить пароль
+              </Menu.Item>
               <Menu.Divider />
               <Menu.Item
                 leftSection={<SignOut size={14} />}
@@ -141,6 +175,57 @@ export const Header: React.FC<HeaderProps> = ({ onToggle }) => {
           </Avatar>
         )}
       </Group>
+
+      <Modal
+        opened={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+        title="Смена пароля"
+        radius="md"
+      >
+        <Stack gap="md">
+          <PasswordInput
+            label="Текущий пароль"
+            required
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.currentTarget.value)}
+          />
+          <PasswordInput
+            label="Новый пароль"
+            required
+            description="Минимум 6 символов"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.currentTarget.value)}
+            error={newPassword && newPassword.length < 6 ? 'Минимум 6 символов' : undefined}
+          />
+          <PasswordInput
+            label="Подтверждение пароля"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.currentTarget.value)}
+            error={
+              confirmPassword && newPassword !== confirmPassword
+                ? 'Пароли не совпадают'
+                : undefined
+            }
+          />
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={() => setChangePasswordOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              loading={changePassword.isPending}
+              disabled={!isPasswordValid}
+            >
+              Сменить пароль
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </header>
   );
 };

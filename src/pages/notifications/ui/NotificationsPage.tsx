@@ -93,7 +93,7 @@ export const NotificationsPage: React.FC = () => {
                 />
               }
             >
-              {connected ? 'WebSocket подключён' : 'WebSocket отключён'}
+              {connected ? 'Поток подключён' : 'Поток отключён'}
             </Badge>
           </Group>
           <Text size="sm" c="dimmed" mt={2}>
